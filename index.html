@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paradise Türk - تعلم اللغة التركية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-purple: #4a2b4d;
+            --accent-gold: #c28d75;
+            --soft-gold: #e5c3b3;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--primary-purple);
+            color: var(--white);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .gold-gradient {
+            background: linear-gradient(135deg, var(--accent-gold), var(--soft-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bg-gold-gradient {
+            background: linear-gradient(135deg, var(--accent-gold), var(--soft-gold));
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .category-card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(194, 141, 117, 0.3);
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-gold);
+            background-color: rgba(194, 141, 117, 0.1);
+        }
+
+        .btn-bounce:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .crown-icon {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        #auth-overlay, #loading-overlay {
+            background: var(--primary-purple);
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--accent-gold);
+            border-radius: 10px;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <div class="text-center">
+            <div class="crown-icon text-6xl mb-4">👑</div>
+            <h2 class="text-2xl font-bold gold-gradient tracking-widest uppercase">Paradise Türk</h2>
+        </div>
+    </div>
+
+    <div id="auth-overlay" class="hidden">
+        <div class="bg-white/5 border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center card-shadow">
+            <div class="crown-icon text-5xl mb-4">👑</div>
+            <h2 class="text-xl font-bold gold-gradient mb-2 uppercase">دخول خاص لطلاب باراديس ترك فقط</h2>
+            <p class="text-gray-400 text-sm mb-6">أدخل البريد المسجل لتفعيل رحلتك</p>
+            
+            <input type="email" id="user-email" placeholder="البريد الإلكتروني" 
+                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl mb-4 text-center text-white focus:border-accent-gold outline-none shadow-inner">
+            
+            <button onclick="verifyAccess()" id="login-btn" class="w-full bg-gold-gradient text-[#4a2b4d] font-bold py-3 rounded-xl btn-bounce shadow-lg">
+                فتح البوابة
+            </button>
+            
+            <p id="auth-msg" class="text-red-400 mt-4 text-sm font-bold hidden"></p>
+        </div>
+    </div>
+
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col p-4 pb-20 hidden">
+        
+        <header class="flex justify-between items-center py-6">
+            <div class="flex flex-col">
+                <h1 class="text-2xl font-bold tracking-tighter uppercase leading-none">PARADISE<span class="text-[#c28d75]">TÜRK</span></h1>
+                <p class="text-[10px] text-gray-300 tracking-[0.2em]">LANGUAGE EDUCATION</p>
+            </div>
+            <div class="bg-white/10 p-2 rounded-full flex items-center gap-2 px-3 border border-white/20">
+                <span class="text-sm font-bold" id="score-display">0</span>
+                <span class="text-lg">👑</span>
+            </div>
+        </header>
+
+        <main id="main-content" class="flex-grow"></main>
+
+        <nav id="footer-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#3a223c] border-t border-white/10 p-3 flex justify-around items-center">
+            <button onclick="showCategories()" id="nav-home" class="flex flex-col items-center gap-1 opacity-100 text-[#c28d75]">
+                <span class="text-xl">🏠</span>
+                <span class="text-[10px]">الرئيسية</span>
+            </button>
+            <button onclick="showProfile()" id="nav-profile" class="flex flex-col items-center gap-1 opacity-50">
+                <span class="text-xl">👤</span>
+                <span class="text-[10px]">بروفايلي</span>
+            </button>
+        </nav>
+    </div>
+
+    <div id="msg-box" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-6 rounded-2xl hidden z-50 text-center card-shadow min-w-[200px]">
+        <div id="msg-icon" class="text-5xl mb-3"></div>
+        <div id="msg-text" class="text-xl font-bold"></div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt8Bx9uNuL0aplfRfUma4a2-FFzZOX9a7J3kDBZdsSSK1vF3S51FRS9bCXFmTJkwM5/exec";
+        
+        const data = [
+            { id: "numbers", title: "الأرقام", icon: "🔢", words: [{ tr: "Bir", ar: "واحد", img: "1️⃣" }, { tr: "iki", ar: "اثنان", img: "2️⃣" }, { tr: "üç", ar: "ثلاثة", img: "3️⃣" }, { tr: "Dört", ar: "أربعة", img: "4️⃣" }, { tr: "Beş", ar: "خمسة", img: "5️⃣" }, { tr: "Altı", ar: "ستة", img: "6️⃣" }, { tr: "Yedi", ar: "سبعة", img: "7️⃣" }, { tr: "Sekiz", ar: "ثمانية", img: "8️⃣" }, { tr: "Dokuz", ar: "تسعة", img: "9️⃣" }, { tr: "On", ar: "عشرة", img: "🔟" }]},
+            { id: "colors", title: "الألوان", icon: "🎨", words: [{ tr: "Kırmızı", ar: "أحمر", img: "🔴" }, { tr: "Mavi", ar: "أزرق", img: "🔵" }, { tr: "Yeşil", ar: "أخضر", img: "🟢" }, { tr: "Sarı", ar: "أصفر", img: "🟡" }, { tr: "Siyah", ar: "أسود", img: "⚫" }, { tr: "Beyaz", ar: "أبيض", img: "⚪" }, { tr: "Turuncu", ar: "برتقالي", img: "🟠" }, { tr: "Mor", ar: "بنفسجي", img: "🟣" }, { tr: "Pembe", ar: "وردي", img: "https://img.icons8.com/?size=100&id=4QqRwygR55sL&format=png&color=F25081" }, { tr: "Kahverengi", ar: "بني", img: "🟤" }]},
+            { id: "family", title: "العائلة", icon: "https://img.icons8.com/?size=100&id=C7qeaP8mfhgd&format=png&color=000000", words: [{ tr: "Anne", ar: "أم", img: "👩" }, { tr: "Baba", ar: "أب", img: "👨" }, { tr: "Kardeş", ar: "أخ/أخت", img: "👦" }, { tr: "Dede", ar: "جد", img: "👴" }, { tr: "Nene", ar: "جدة", img: "👵" }, { tr: "Oğul", ar: "ابن", img: "👶" }, { tr: "Kız", ar: "بنت", img: "👧" }, { tr: "Amca", ar: "عم", img: "👱‍♂️" }, { tr: "Hala", ar: "عمة", img: "👱‍♀️" }, { tr: "Teyze", ar: "خالة", img: "👩‍💼" }]},
+            { id: "fruits", title: "الفواكه", icon: "🍎", words: [{ tr: "Elma", ar: "تفاح", img: "🍎" }, { tr: "Muz", ar: "موز", img: "🍌" }, { tr: "Çilek", ar: "فراولة", img: "🍓" }, { tr: "üzüm", ar: "عنب", img: "🍇" }, { tr: "Karpuz", ar: "بطيخ", img: "🍉" }, { tr: "Portakal", ar: "برتقال", img: "🍊" }, { tr: "Limon", ar: "ليمون", img: "🍋" }, { tr: "Kiraz", ar: "كرز", img: "🍒" }, { tr: "Armut", ar: "كمثرى", img: "🍐" }, { tr: "Şeftali", ar: "خوخ", img: "🍑" }]},
+            { id: "jobs", title: "المهن", icon: "💼", words: [{ tr: "Doktor", ar: "طبيب", img: "👨‍⚕️" }, { tr: "öğretmen", ar: "معلم", img: "👨‍🏫" }, { tr: "Mühendis", ar: "مهندس", img: "👷" }, { tr: "Polis", ar: "شرطي", img: "👮" }, { tr: "Aşçı", ar: "طباخ", img: "👨‍🍳" }, { tr: "Pilot", ar: "طيار", img: "👨‍✈️" }, { tr: "Avukat", ar: "محامي", img: "https://img.icons8.com/?size=100&id=R1U0Sf3nev4w&format=png&color=000000" }, { tr: "Hemşire", ar: "ممرضة", img: "https://img.icons8.com/?size=100&id=Mt4VR2UoR3aY&format=png&color=000000" }, { tr: "Çiftçi", ar: "مزارع", img: "👨‍🌾" }, { tr: "Sanatçı", ar: "فنان", img: "👨‍🎨" }]},
+            { id: "animals", title: "الحيوانات", icon: "🦁", words: [{ tr: "Kedi", ar: "قطة", img: "🐱" }, { tr: "Köpek", ar: "كلب", img: "🐶" }, { tr: "Aslan", ar: "أسد", img: "🦁" }, { tr: "Kuş", ar: "عصفور", img: "🐦" }, { tr: "At", ar: "حصان", img: "🐎" }, { tr: "Fil", ar: "فيل", img: "🐘" }, { tr: "Maymun", ar: "قرد", img: "🐒" }, { tr: "Tavşan", ar: "أرنب", img: "🐰" }, { tr: "Balık", ar: "سمكة", img: "🐟" }, { tr: "Ayı", ar: "دب", img: "🐻" }]},
+            { id: "clothes", title: "الملابس", icon: "https://img.icons8.com/?size=100&id=ghSC3GVYHkHU&format=png&color=000000", words: [{ tr: "Ceket", ar: "سترة", img: "🧥" }, { tr: "Pantolon", ar: "بنطال", img: "👖" }, { tr: "Gömlek", ar: "قميص", img: "https://img.icons8.com/?size=100&id=16596&format=png&color=000000" }, { tr: "Ayakkabı", ar: "حذاء", img: "👟" }, { tr: "Şapka", ar: "قبعة", img: "🧢" }, { tr: "Elbise", ar: "فستان", img: "👗" }, { tr: "Çorap", ar: "جوارب", img: "🧦" }, { tr: "Eldiven", ar: "قفازات", img: "🧤" }, { tr: "Kemer", ar: "حزام", img: "https://img.icons8.com/?size=100&id=6SF4MB3mSvq4&format=png&color=000000" }, { tr: "Gözlük", ar: "نظارات", img: "👓" }]},
+            { id: "nature", title: "الطبيعة", icon: "https://img.icons8.com/?size=100&id=c5XQvRn6gmh3&format=png&color=000000", words: [{ tr: "Güneş", ar: "شمس", img: "☀️" }, { tr: "Ay", ar: "قمر", img: "🌙" }, { tr: "Yıldız", ar: "نجمة", img: "⭐" }, { tr: "Deniz", ar: "بحر", img: "🌊" }, { tr: "Dağ", ar: "جبل", img: "⛰️" }, { tr: "Ağaç", ar: "شجرة", img: "🌳" }, { tr: "Çiçek", ar: "زهرة", img: "🌻" }, { tr: "Yağmur", ar: "مطر", img: "🌧️" }, { tr: "Kar", ar: "ثلج", img: "❄️" }, { tr: "Rüzgar", ar: "ريح", img: "💨" }]},
+            { id: "home", title: "المنزل", icon: "🏠", words: [{ tr: "Kapı", ar: "باب", img: "🚪" }, { tr: "Pencere", ar: "نافذة", img: "https://img.icons8.com/?size=100&id=20699&format=png&color=000000" }, { tr: "Mutfak", ar: "مطبخ", img: "https://img.icons8.com/?size=100&id=ryxe2eE4ND4m&format=png&color=000000" }, { tr: "Yatak", ar: "سرير", img: "🛏️" }, { tr: "Masa", ar: "طاولة", img: "https://img.icons8.com/?size=100&id=lR5VyMcksVo2&format=png&color=000000" }, { tr: "Lamba", ar: "مصباح", img: "💡" }, { tr: "Banyo", ar: "حمام", img: "https://img.icons8.com/?size=100&id=nXlfUBYcE0C3&format=png&color=000000" }, { tr: "Bahçe", ar: "حديقة", img: "https://img.icons8.com/?size=100&id=ikffK1CzLJKI&format=png&color=000000" }, { tr: "Ayna", ar: "مرآة", img: "https://img.icons8.com/?size=100&id=vhClVTMTuM-7&format=png&color=000000" }, { tr: "Halı", ar: "سجادة", img: "https://img.icons8.com/?size=100&id=WWPqM_d_5ION&format=png&color=000000" }]},
+            { id: "verbs", title: "الأفعال الشائعة", icon: "https://img.icons8.com/?size=100&id=33182&format=png&color=000000", words: [{ tr: "Gel", ar: "تعال", img: "https://img.icons8.com/?size=100&id=V7lP9VtMyd0D&format=png&color=000000" }, { tr: "Git", ar: "اذهب", img: "https://img.icons8.com/?size=100&id=Vto3UMRrnfVz&format=png&color=000000" }, { tr: "Oku", ar: "اقرأ", img: "https://img.icons8.com/?size=100&id=oSeDZRvx4vHL&format=png&color=000000" }, { tr: "Yaz", ar: "اكتب", img: "✍️" }, { tr: "iç", ar: "اشرب", img: "https://img.icons8.com/?size=100&id=VivwonpYYGi6&format=png&color=000000" }, { tr: "Ye", ar: "كل", img: "https://img.icons8.com/?size=100&id=Mc7MeCw5747T&format=png&color=000000" }, { tr: "Bak", ar: "انظر", img: "https://img.icons8.com/?size=100&id=XOQ8AO4LZthX&format=png&color=000000" }, { tr: "Dinle", ar: "استمع", img: "https://img.icons8.com/?size=100&id=4PWXiMw8CV30&format=png&color=000000" }, { tr: "Oyna", ar: "العب", img: "https://img.icons8.com/?size=100&id=bMIi5SFvG3p2&format=png&color=000000" }, { tr: "Uyu", ar: "نم", img: "https://img.icons8.com/?size=100&id=120352&format=png&color=000000" }]},
+            { id: "school", title: "المدرسة", icon: "https://img.icons8.com/?size=100&id=RWH5eUW9Vr7f&format=png&color=000000", words: [{ tr: "Kalem", ar: "قلم", img: "✏️" }, { tr: "Kitap", ar: "كتاب", img: "📚" }, { tr: "Defter", ar: "دفتر", img: "https://img.icons8.com/?size=100&id=S3d0ZGhgUJB7&format=png&color=000000" }, { tr: "Okul", ar: "مدرسة", img: "🏫" }, { tr: "Sınıf", ar: "صف", img: "https://img.icons8.com/?size=100&id=kmUrp7YjifpP&format=png&color=000000" }, { tr: "Sıra", ar: "مقعد", img: "https://img.icons8.com/?size=100&id=s1bEvaGdXiCX&format=png&color=000000" }, { tr: "Çanta", ar: "حقيبة", img: "🎒" }, { tr: "Silgi", ar: "ممحاة", img: "https://img.icons8.com/?size=100&id=TW9OvVoHl7js&format=png&color=000000" }, { tr: "öğrenci", ar: "طالب", img: "👨‍🎓" }, { tr: "Sınav", ar: "امتحان", img: "https://img.icons8.com/?size=100&id=46520&format=png&color=000000" }]},
+            { id: "body", title: "جسم الإنسان", icon: "https://img.icons8.com/?size=100&id=rHkAvDvC8YQQ&format=png&color=000000", words: [{ tr: "Göz", ar: "عين", img: "👁️" }, { tr: "Kulak", ar: "أذن", img: "👂" }, { tr: "Burun", ar: "أنف", img: "👃" }, { tr: "Ağız", ar: "فم", img: "👄" }, { tr: "El", ar: "يد", img: "✋" }, { tr: "Ayak", ar: "قدم", img: "🦶" }, { tr: "Baş", ar: "رأس", img: "https://img.icons8.com/?size=100&id=BnpbsNUPf9Me&format=png&color=000000" }, { tr: "Saç", ar: "شعر", img: "https://img.icons8.com/?size=100&id=40875&format=png&color=000000" }, { tr: "Kalp", ar: "قلب", img: "https://img.icons8.com/?size=100&id=jO8IRVaLySyG&format=png&color=000000" }, { tr: "Parmak", ar: "اصبع", img: "☝️" }]},
+            { id: "kitchen", title: "المطبخ", icon: "https://img.icons8.com/?size=100&id=XtisAn2URQM3&format=png&color=000000", words: [{ tr: "Tabak", ar: "صحن", img: "https://img.icons8.com/?size=100&id=vz5ehWLXstjq&format=png&color=000000" }, { tr: "Bardak", ar: "كأس", img: "🥛" }, { tr: "Kaşık", ar: "ملعقة", img: "🥄" }, { tr: "Çatal", ar: "شوكة", img: "https://img.icons8.com/?size=100&id=Fi5eCA_3K6L3&format=png&color=000000" }, { tr: "Bıçak", ar: "سكين", img: "🔪" }, { tr: "Tencere", ar: "قدر", img: "https://img.icons8.com/?size=100&id=TgvpRQjBeyz9&format=png&color=000000" }, { tr: "Ekmek", ar: "خبز", img: "🍞" }, { tr: "Tuz", ar: "ملح", img: "🧂" }, { tr: "Çay", ar: "شاي", img: "https://img.icons8.com/?size=100&id=t6i7vzTr0zyG&format=png&color=000000" }, { tr: "Şeker", ar: "سكر", img: "https://img.icons8.com/?size=100&id=vWPTjJmIeutf&format=png&color=000000" }]},
+            { id: "weather", title: "الطقس", icon: "https://img.icons8.com/?size=100&id=Vyw-jIXhayPD&format=png&color=000000", words: [{ tr: "Sıcak", ar: "حار", img: "https://img.icons8.com/?size=100&id=X1lCReJxJP0I&format=png&color=000000" }, { tr: "Soğuk", ar: "بارد", img: "https://img.icons8.com/?size=100&id=A01OMLqyaokr&format=png&color=000000" }, { tr: "Bulutlu", ar: "غائم", img: "https://img.icons8.com/?size=100&id=pvE1T6cMZ9_3&format=png&color=000000" }, { tr: "Güneşli", ar: "مشمس", img: "https://img.icons8.com/?size=100&id=dzi5TGZpsbP7&format=png&color=000000" }, { tr: "Karlı", ar: "مثلج", img: "https://img.icons8.com/?size=100&id=YAYVfad1K0Lp&format=png&color=000000" }, { tr: "Yağmurlu", ar: "ممطر", img: "https://img.icons8.com/?size=100&id=lnlY2wBk8BW5&format=png&color=000000" }, { tr: "Fırtınalı", ar: "عاصف", img: "https://img.icons8.com/?size=100&id=aiLwARahhyFb&format=png&color=000000" }, { tr: "Derece", ar: "درجة", img: "https://img.icons8.com/?size=100&id=9dGlRh5Y4qEF&format=png&color=000000" }, { tr: "Hava", ar: "هواء/جو", img: "https://img.icons8.com/?size=100&id=ivNTSGVDVKIh&format=png&color=000000" }, { tr: "Gökkuşağı", ar: "قوس قزح", img: "https://img.icons8.com/?size=100&id=pMWdl41vNjGC&format=png&color=000000" }]},
+            { id: "transport", title: "المواصلات", icon: "https://img.icons8.com/?size=100&id=WX_XpoOd8F9G&format=png&color=000000", words: [{ tr: "Bisiklet", ar: "دراجة", img: "🚲" }, { tr: "Otobüs", ar: "حافلة", img: "🚌" }, { tr: "Uçak", ar: "طائرة", img: "✈️" }, { tr: "Tren", ar: "قطار", img: "🚆" }, { tr: "Gemi", ar: "سفينة", img: "🚢" }, { tr: "Motosiklet", ar: "دراجة نارية", img: "🏍️" }, { tr: "Taksi", ar: "تكسي", img: "🚕" }, { tr: "Metro", ar: "مترو", img: "🚇" }, { tr: "Helikopter", ar: "مروحية", img: "🚁" }, { tr: "Tramvay", ar: "ترامواي", img: "🚋" }]},
+            { id: "places", title: "الأماكن", icon: "📍", words: [{ tr: "Müze", ar: "متحف", img: "🏛️" }, { tr: "Tiyatro", ar: "مسرح", img: "https://img.icons8.com/?size=100&id=h5VJ2aUGETKL&format=png&color=000000" }, { tr: "Sinema", ar: "سينما", img: "https://img.icons8.com/?size=100&id=Eefyv9KSPXv3&format=png&color=000000" }, { tr: "Restoran", ar: "مطعم", img: "https://img.icons8.com/?size=100&id=2BeIdZyy0fFG&format=png&color=000000" }, { tr: "Banka", ar: "بنك", img: "🏦" }, { tr: "Eczane", ar: "صيدلية", img: "https://img.icons8.com/?size=100&id=aP8WJW9pj5q5&format=png&color=000000" }, { tr: "Kütüphane", ar: "مكتبة", img: "https://img.icons8.com/?size=100&id=FL40itW8kzRg&format=png&color=000000" }, { tr: "Postane", ar: "بريد", img: "📮" }, { tr: "Otel", ar: "فندق", img: "🏨" }, { tr: "Liman", ar: "ميناء", img: "https://img.icons8.com/?size=100&id=rbFmOZBO9N5k&format=png&color=000000" }]},
+            { id: "time", title: "الوقت", icon: "⏰", words: [{ tr: "Saat", ar: "ساعة", img: "🕒" }, { tr: "Gün", ar: "يوم", img: "https://img.icons8.com/?size=100&id=46380&format=png&color=000000" }, { tr: "Hafta", ar: "أسبوع", img: "https://img.icons8.com/?size=100&id=76thz6hgYpSk&format=png&color=000000" }, { tr: "Ay", ar: "شهر", img: "https://img.icons8.com/?size=100&id=198HiDIrtUmu&format=png&color=000000" }, { tr: "Yıl", ar: "سنة", img: "https://img.icons8.com/?size=100&id=MjqSVgXH9X7P&format=png&color=000000" }, { tr: "Bugün", ar: "اليوم", img: "https://img.icons8.com/?size=100&id=C6XYer8eTfjA&format=png&color=000000" }, { tr: "Dün", ar: "أمس", img: "https://img.icons8.com/?size=100&id=A9CDNwBalkR2&format=png&color=000000" }, { tr: "Yarın", ar: "غداً", img: "https://img.icons8.com/?size=100&id=IhKHZpCManlW&format=png&color=000000" }, { tr: "Sabah", ar: "صباح", img: "https://img.icons8.com/?size=100&id=qs7i2xsN6JHA&format=png&color=000000" }, { tr: "Akşam", ar: "مساء", img: "https://img.icons8.com/?size=100&id=FOrrHOduwKfx&format=png&color=000000" }]},
+            { id: "vegetables", title: "الخضروات", icon: "🥦", words: [{ tr: "Domates", ar: "طماطم", img: "🍅" }, { tr: "Salatalık", ar: "خيار", img: "🥒" }, { tr: "Patates", ar: "بطاطس", img: "🥔" }, { tr: "Soğan", ar: "بصل", img: "🧅" }, { tr: "Havuç", ar: "جزر", img: "🥕" }, { tr: "Patlıcan", ar: "باذنجان", img: "🍆" }, { tr: "Biber", ar: "فلفل", img: "🫑" }, { tr: "Mısır", ar: "ذرة", img: "🌽" }, { tr: "Sarımsak", ar: "ثوم", img: "🧄" }, { tr: "Marul", ar: "خس", img: "🥬" }]},
+            { id: "feelings", title: "المشاعر", icon: "😊", words: [{ tr: "Mutlu", ar: "سعيد", img: "😊" }, { tr: "üzgün", ar: "حزين", img: "😢" }, { tr: "Kızgın", ar: "غاضب", img: "😠" }, { tr: "Yorgun", ar: "متعب", img: "😫" }, { tr: "Aç", ar: "جائع", img: "😋" }, { tr: "Susuz", ar: "عطشان", img: "🥵" }, { tr: "Şaşkın", ar: "متفاجئ", img: "😲" }, { tr: "Korkmuş", ar: "خائف", img: "😨" }, { tr: "Hasta", ar: "مريض", img: "🤒" }, { tr: "iyi", ar: "بخير", img: "👍" }]},
+            { id: "hobbies", title: "الهوايات", icon: "https://img.icons8.com/?size=100&id=f1VUekxJnwrR&format=png&color=000000", words: [{ tr: "Yüzmek", ar: "السباحة", img: "https://img.icons8.com/?size=100&id=x5PYun7Pr9J_&format=png&color=000000" }, { tr: "Koşu", ar: "الجري", img: "https://img.icons8.com/?size=100&id=RmoArfsVrmVm&format=png&color=000000" }, { tr: "Yürüyüş", ar: "المشي", img: "https://img.icons8.com/?size=100&id=LdShUwNQkGbw&format=png&color=000000" }, { tr: "Resim yapmak", ar: "الرسم", img: "https://img.icons8.com/?size=100&id=aDDzwvxmUi2b&format=png&color=000000" }, { tr: "Müzik çalmak", ar: "العزف", img: "https://img.icons8.com/?size=100&id=LQ2bG740zCbB&format=png&color=000000" }, { tr: "Dans etmek", ar: "الرقص", img: "https://img.icons8.com/?size=100&id=k9FxCSx03NK7&format=png&color=000000" }, { tr: "Kitap okumak", ar: "القراءة", img: "https://img.icons8.com/?size=100&id=OYbFh7PuEW4n&format=png&color=000000" }, { tr: "Yemek yapmak", ar: "الطبخ", img: "https://img.icons8.com/?size=100&id=Sh7YZJ8Fwwkq&format=png&color=000000" }, { tr: "Fotoğraf çekmek", ar: "التصوير", img: "https://img.icons8.com/?size=100&id=baY2p5EMY3Cw&format=png&color=000000" }, { tr: "Futbol oynamak", ar: "كرة القدم", img: "https://img.icons8.com/?size=100&id=4SUEeI2Ls7cY&format=png&color=000000" }]},
+            { id: "tech", title: "التكنولوجيا", icon: "https://img.icons8.com/?size=100&id=lSXsn9erua8J&format=png&color=000000", words: [{ tr: "Telefon", ar: "هاتف", img: "📱" }, { tr: "Bilgisayar", ar: "حاسوب", img: "💻" }, { tr: "internet", ar: "إنترنت", img: "🌐" }, { tr: "Ekran", ar: "شاشة", img: "https://img.icons8.com/?size=100&id=iCwcOoy8tOGw&format=png&color=000000" }, { tr: "Kamera", ar: "كاميرا", img: "📷" }, { tr: "Kulaklık", ar: "سماعات", img: "🎧" }, { tr: "Şarj aleti", ar: "شاحن", img: "https://img.icons8.com/?size=100&id=gZYWoCrsvoFU&format=png&color=000000" }, { tr: "Klavye", ar: "لوحة مفاتيح", img: "⌨️" }, { tr: "Fare", ar: "فأرة", img: "🖱️" }, { tr: "Yazıcı", ar: "طابعة", img: "🖨️" }]},
+            { id: "bathroom", title: "الحمام", icon: "https://img.icons8.com/?size=100&id=NwabgCrAMZoW&format=png&color=000000", words: [{ tr: "Sabun", ar: "صابون", img: "🧼" }, { tr: "Havlu", ar: "منشفة", img: "https://img.icons8.com/?size=100&id=2FiKvurSXqfJ&format=png&color=000000" }, { tr: "Fırça", ar: "فرشاة", img: "https://img.icons8.com/?size=100&id=6xNvyt265f4h&format=png&color=000000" }, { tr: "Diş macunu", ar: "معجون أسنان", img: "https://img.icons8.com/?size=100&id=mxDTRNBsnPS7&format=png&color=000000" }, { tr: "Şampuan", ar: "شامبو", img: "https://img.icons8.com/?size=100&id=48WirSgoppby&format=png&color=000000" }, { tr: "Küvet", ar: "حوض استحمام", img: "https://img.icons8.com/?size=100&id=m376tgMfikIW&format=png&color=000000" }, { tr: "Tuvalet", ar: "مرحاض", img: "🚽" }, { tr: "Musluk", ar: "صنبور", img: "https://img.icons8.com/?size=100&id=gpQxT2MVr7BG&format=png&color=000000" }, { tr: "Duş", ar: "دوش", img: "🚿" }, { tr: "Tarak", ar: "مشط", img: "https://img.icons8.com/?size=100&id=NZze8sVYO74T&format=png&color=000000" }]},
+            { id: "office", title: "المكتب", icon: "🏢", words: [{ tr: "Ofis masası", ar: "طاولة مكتب", img: "https://img.icons8.com/?size=100&id=b3SXAMQ8Znca&format=png&color=000000" }, { tr: "Çekmece", ar: "درج", img: "https://img.icons8.com/?size=100&id=DykW6AA0fIPB&format=png&color=000000" }, { tr: "Kağıt", ar: "ورق", img: "📄" }, { tr: "Dosya", ar: "ملف", img: "📁" }, { tr: "Zımba", ar: "خرامة/دباسة", img: "📎" }, { tr: "Makas", ar: "مقص", img: "✂️" }, { tr: "Bant", ar: "لاصق", img: "https://img.icons8.com/?size=100&id=Seimw2kARKJe&format=png&color=000000" }, { tr: "Sözlük", ar: "قاموس", img: "https://img.icons8.com/?size=100&id=9cUnIYR19aDR&format=png&color=000000" }, { tr: "Takvim", ar: "تقويم", img: "https://img.icons8.com/?size=100&id=sM691T69z4h9&format=png&color=000000" }, { tr: "Duvar saati", ar: "ساعة حائط", img: "https://img.icons8.com/?size=100&id=zNm8mTMIVh0z&format=png&color=000000" }]},
+            { id: "music", title: "الموسيقى", icon: "https://img.icons8.com/?size=100&id=zAzROOhkw_7N&format=png&color=000000", words: [{ tr: "Gitar", ar: "جيتار", img: "🎸" }, { tr: "Piyano", ar: "بيانو", img: "🎹" }, { tr: "Keman", ar: "كمان", img: "🎻" }, { tr: "Davul", ar: "طبل", img: "🥁" }, { tr: "Şarkı", ar: "أغنية", img: "🎤" }, { tr: "Nota", ar: "نوتة", img: "🎶" }, { tr: "Radyo", ar: "راديو", img: "📻" }, { tr: "Konser", ar: "حفل", img: "https://img.icons8.com/?size=100&id=DxWtV0Rvbfz7&format=png&color=000000" }, { tr: "Ses", ar: "صوت", img: "🔊" }, { tr: "Koro", ar: "الجوقة", img: "https://img.icons8.com/?size=100&id=sZF8ZC4z4TBl&format=png&color=000000" }]},
+            { id: "sports", title: "الرياضة", icon: "https://img.icons8.com/?size=100&id=rDIdoULww7UB&format=png&color=000000", words: [{ tr: "Antrenman", ar: "تمرين", img: "https://img.icons8.com/?size=100&id=16971&format=png&color=000000" }, { tr: "Oyuncu", ar: "لاعب", img: "https://img.icons8.com/?size=100&id=HSHia09zmxiz&format=png&color=000000" }, { tr: "Hakem", ar: "حكم", img: "https://img.icons8.com/?size=100&id=edsnOGWJodF3&format=png&color=000000" }, { tr: "Gol", ar: "هدف", img: "https://img.icons8.com/?size=100&id=PYXkVRuJka6y&format=png&color=000000" }, { tr: "Takım", ar: "فريق", img: "https://img.icons8.com/?size=100&id=3d61gRYnju4B&format=png&color=000000" }, { tr: "Kupa", ar: "كأس", img: "https://img.icons8.com/?size=100&id=kuU7I7uPlHfo&format=png&color=000000" }, { tr: "Şampiyon", ar: "بطل", img: "https://img.icons8.com/?size=100&id=HXg3GIcnWMTI&format=png&color=000000" }, { tr: "Skor", ar: "نتيجة", img: "https://img.icons8.com/?size=100&id=74669&format=png&color=000000" }, { tr: "Sporcu", ar: "رياضي", img: "https://img.icons8.com/?size=100&id=nZWHlx6OGMES&format=png&color=000000" }, { tr: "Maç", ar: "مباراة", img: "https://img.icons8.com/?size=100&id=biF2pJYLB8Di&format=png&color=000000" }]},
+            { id: "space", title: "الفضاء", icon: "🚀", words: [{ tr: "Dünya", ar: "الأرض", img: "🌍" }, { tr: "Gezegen", ar: "كوكب", img: "🪐" }, { tr: "Astronot", ar: "رائد فضاء", img: "👨‍🚀" }, { tr: "Roket", ar: "صاروخ", img: "🚀" }, { tr: "Galaksi", ar: "مجرة", img: "🌌" }, { tr: "Teleskop", ar: "تلسكوب", img: "🔭" }, { tr: "Kuyruklu yıldız", ar: "مذنب", img: "☄️" }, { tr: "Uydu", ar: "قمر صناعي", img: "🛰️" }, { tr: "Uzay gemisi", ar: "مركبة فضائية", img: "https://img.icons8.com/?size=100&id=33142&format=png&color=000000" }, { tr: "uzay istasyonu", ar: "محطة فضائية", img: "https://img.icons8.com/?size=100&id=AY3N7d7VkjpY&format=png&color=000000" }]},
+            { id: "vacation", title: "العطلة", icon: "🏖️", words: [{ tr: "Tatil", ar: "عطلة", img: "🏖️" }, { tr: "Otel", ar: "فندق", img: "🏨" }, { tr: "Plaj", ar: "شاطئ", img: "https://img.icons8.com/?size=100&id=GlytX833t9FA&format=png&color=000000" }, { tr: "Kum", ar: "رمل", img: "https://img.icons8.com/?size=100&id=6amU1di0HbM8&format=png&color=000000" }, { tr: "Güneş kremi", ar: "واقي شمس", img: "https://img.icons8.com/?size=100&id=SB9NA3Rw8xQe&format=png&color=000000" }, { tr: "Bavul", ar: "حقيبة سفر", img: "🧳" }, { tr: "Pasaport", ar: "جواز سفر", img: "https://img.icons8.com/?size=100&id=ANL88PgyvGbi&format=png&color=000000" }, { tr: "Bilet", ar: "تذكرة", img: "🎫" }, { tr: "Harita", ar: "خريطة", img: "🗺️" }, { tr: "Fotograf", ar: "صورة", img: "📷" }]},
+            { id: "emotions2", title: "مشاعر متقدمة", icon: "🤯", words: [{ tr: "Heyecanlı", ar: "متحمس", img: "🤩" }, { tr: "Endişeli", ar: "قلق", img: "😟" }, { tr: "Gururlu", ar: "فخور", img: "😌" }, { tr: "Utangaç", ar: "خجول", img: "☺️" }, { tr: "Sıkılmış", ar: "ملان", img: "😑" }, { tr: "Yalnız", ar: "وحيد", img: "🙍" }, { tr: "Emin", ar: "متأكد", img: "🧐" }, { tr: "Kararsız", ar: "متردد", img: "🤔" }, { tr: "Umutlu", ar: "متأمل", img: "😇" }, { tr: "Kıskanç", ar: "غيور", img: "😒" }]},
+            { id: "tools", title: "أدوات التصليح", icon: "https://img.icons8.com/?size=100&id=YC5rVT4bPLJq&format=png&color=000000", words: [{ tr: "Çekiç", ar: "مطرقة", img: "https://img.icons8.com/?size=100&id=uC94PACT7g4U&format=png&color=000000" }, { tr: "Tornavida", ar: "مفك", img: "https://img.icons8.com/?size=100&id=SgfN0N5Q5kN4&format=png&color=000000" }, { tr: "Pense", ar: "زرادية", img: "https://img.icons8.com/?size=100&id=PJatz9hJafCF&format=png&color=000000" }, { tr: "Testere", ar: "منشار", img: "https://img.icons8.com/?size=100&id=0JV4j9JVoz1V&format=png&color=000000" }, { tr: "Anahtar", ar: "مفتاح ربط", img: "https://img.icons8.com/?size=100&id=mX0JtDxD3Uc8&format=png&color=000000" }, { tr: "Matkap", ar: "مثقاب", img: "https://img.icons8.com/?size=100&id=faLyVAIBK191&format=png&color=000000" }, { tr: "ölçü", ar: "مقياس", img: "https://img.icons8.com/?size=100&id=YJlIAEke8Y77&format=png&color=000000" }, { tr: "Boya", ar: "طلاء", img: "https://img.icons8.com/?size=100&id=Ul7uBF78KJ6y&format=png&color=000000" }, { tr: "Fırça", ar: "فرشاة طلاء", img: "https://img.icons8.com/?size=100&id=e4M8QMAHOmmF&format=png&color=000000" }, { tr: "Çivi", ar: "مسمار", img: "https://img.icons8.com/?size=100&id=acmwdyAJysZC&format=png&color=000000" }]},
+            { id: "garden", title: "أدوات الحديقة", icon: "🎍", words: [{ tr: "Toprak", ar: "تراب", img: "https://img.icons8.com/?size=100&id=9qgK9udZyVJ9&format=png&color=000000" }, { tr: "Tohum", ar: "بذرة", img: "https://img.icons8.com/?size=100&id=uS0GZmuS5fzC&format=png&color=000000" }, { tr: "Balta", ar: "فأس", img: "https://img.icons8.com/?size=100&id=12211&format=png&color=000000" }, { tr: "Kova", ar: "دلو", img: "https://img.icons8.com/?size=100&id=RkT2QSpO8ZBH&format=png&color=000000" }, { tr: "Kürek", ar: "مجرفة", img: "https://img.icons8.com/?size=100&id=12994&format=png&color=000000" }, { tr: "Hortum", ar: "خرطوم", img: "https://img.icons8.com/?size=100&id=I2UAXKEe3Coe&format=png&color=000000" }, { tr: "Tırmık", ar: "مشط الحديقة", img: "https://img.icons8.com/?size=100&id=e6vnaUOxa3P5&format=png&color=000000" }, { tr: "Çapa", ar: "معزقة", img: "https://img.icons8.com/?size=100&id=VZN61f142psg&format=png&color=000000" }, { tr: "Orak", ar: "منجل", img: "https://img.icons8.com/?size=100&id=16537&format=png&color=000000" }, { tr: "Fıskiye", ar: "رشاش مياه", img: "https://img.icons8.com/?size=100&id=6qwH4ejNSoFD&format=png&color=000000" }]},
+            { id: "shapes", title: "الأشكال", icon: "🔷", words: [{ tr: "Daire", ar: "دائرة", img: "https://img.icons8.com/?size=100&id=rhnJsDc3HDU_&format=png&color=000000" }, { tr: "Kare", ar: "مربع", img: "https://img.icons8.com/?size=100&id=7E0W4FsheiAN&format=png&color=000000" }, { tr: "üçgen", ar: "مثلث", img: "https://img.icons8.com/?size=100&id=0e0onVqA9PnZ&format=png&color=000000" }, { tr: "Dikdörtgen", ar: "مستطيل", img: "https://img.icons8.com/?size=100&id=Fp2DCA3ujimO&format=png&color=000000" }, { tr: "Yıldız", ar: "نجمة", img: "⭐" }, { tr: "Kalp", ar: "قلب", img: "❤️" }, { tr: "Elips", ar: "بيضاوي", img: "🥚" }, { tr: "Altıgen", ar: "سداسي", img: "https://img.icons8.com/?size=100&id=NHJwENwadmWH&format=png&color=000000" }, { tr: "Çizgi", ar: "خط", img: "https://img.icons8.com/?size=100&id=LZgUcVWW79vH&format=png&color=000000" }, { tr: "Nokta", ar: "نقطة", img: "⏺️" }]},
+            { id: "adjectives", title: "الصفات العامة", icon: "🎭", words: [{ tr: "Büyük", ar: "كبير", img: "https://img.icons8.com/?size=100&id=l0l323xDNqRc&format=png&color=000000" }, { tr: "Küçük", ar: "صغير", img: "https://img.icons8.com/?size=100&id=I0bgGDfiCLem&format=png&color=000000" }, { tr: "Uzun", ar: "طويل", img: "https://img.icons8.com/?size=100&id=123961&format=png&color=000000" }, { tr: "Kısa", ar: "قصير", img: "https://img.icons8.com/?size=100&id=122806&format=png&color=000000" }, { tr: "Yeni", ar: "جديد", img: "https://img.icons8.com/?size=100&id=ihWmBxeQ1mjV&format=png&color=000000" }, { tr: "Eski", ar: "قديم", img: "https://img.icons8.com/?size=100&id=TTDI2mlb7ObJ&format=png&color=000000" }, { tr: "Güzel", ar: "جميل", img: "https://img.icons8.com/?size=100&id=51579&format=png&color=000000" }, { tr: "Çirkin", ar: "قبيح", img: "https://img.icons8.com/?size=100&id=Cu7cs6BdnbMf&format=png&color=000000" }, { tr: "Zengin", ar: "غني", img: "https://img.icons8.com/?size=100&id=e98ZQ91tuvto&format=png&color=000000" }, { tr: "Fakir", ar: "فقير", img: "🏚️" }]},
+            { id: "city_life", title: "الحياة في المدينة", icon: "🏙️", words: [{ tr: "Cadde", ar: "شارع رئيسي", img: "https://img.icons8.com/?size=100&id=7VIEQ1GiK0Iz&format=png&color=000000" }, { tr: "Sokak", ar: "شارع فرعي", img: "https://img.icons8.com/?size=100&id=wZ31jo1E8sI5&format=png&color=000000" }, { tr: "Bina", ar: "بناء", img: "🏢" }, { tr: "Park", ar: "منتزه", img: "https://img.icons8.com/?size=100&id=1XCqBKuClAq4&format=png&color=000000" }, { tr: "Merkez", ar: "مركز المدينة", img: "https://img.icons8.com/?size=100&id=m5F-zjBiSh2U&format=png&color=000000" }, { tr: "Meydan", ar: "ساحة المدينة", img: "⛲" }, { tr: "Köprü", ar: "جسر", img: "🌉" }, { tr: "Durak", ar: "موقف", img: "🚏" }, { tr: "Cami", ar: "جامع", img: "🕌" }, { tr: "Kilise", ar: "كنيسة", img: "⛪" }]},
+            { id: "daily_routine", title: "الروتين اليومي", icon: "https://img.icons8.com/?size=100&id=GAXdmniGTUgx&format=png&color=000000", words: [{ tr: "Uyanmak", ar: "الاستيقاظ", img: "https://img.icons8.com/?size=100&id=bZLm7bns9S6W&format=png&color=000000" }, { tr: "Yıkanmak", ar: "الغسل", img: "https://img.icons8.com/?size=100&id=R5ArIUQrffeP&format=png&color=000000" }, { tr: "Kahvaltı yapmak", ar: "تناول الفطور", img: "https://img.icons8.com/?size=100&id=mv4DN0HttPD4&format=png&color=000000" }, { tr: "Çalışmak", ar: "العمل", img: "https://img.icons8.com/?size=100&id=dVGj8WpidQu9&format=png&color=000000" }, { tr: "Televizyon izlemek", ar: "مشاهدة التلفاز", img: "https://img.icons8.com/?size=100&id=90BayNWpisou&format=png&color=000000" }, { tr: "Dinlenmek", ar: "الاستراحة", img: "https://img.icons8.com/?size=100&id=zNMWGK0lHFdq&format=png&color=000000" }, { tr: "Temizlik yapmak", ar: "التنظيف", img: "https://img.icons8.com/?size=100&id=12236&format=png&color=000000" }, { tr: "Spor yapmak", ar: "ممارسة الرياضة", img: "https://img.icons8.com/?size=100&id=eMyFuLjESwET&format=png&color=000000" }, { tr: "Tıraş olmak", ar: "الحلاقة", img: "https://img.icons8.com/?size=100&id=dBizgbt8eXd0&format=png&color=000000" }, { tr: "Uyumak", ar: "النوم", img: "https://img.icons8.com/?size=100&id=120352&format=png&color=000000" }]},
+            { id: "health_care", title: "العناية بالصحة", icon: "🏥", words: [{ tr: "ilaç", ar: "دواء", img: "https://img.icons8.com/?size=100&id=CU1QdW7Wv55N&format=png&color=000000" }, { tr: "iğne", ar: "حقنة", img: "https://img.icons8.com/?size=100&id=3fhpUBEis65z&format=png&color=000000" }, { tr: "Yara bandı", ar: "لاصق طبي", img: "https://img.icons8.com/?size=100&id=w9hp_39WuBr-&format=png&color=000000" }, { tr: "Ağrı", ar: "ألم", img: "https://img.icons8.com/?size=100&id=xj0kMQKPzqwG&format=png&color=000000" }, { tr: "Ateş", ar: "حرارة", img: "https://img.icons8.com/?size=100&id=5ft22ra4psDW&format=png&color=000000" }, { tr: "öksürük", ar: "سعال", img: "https://img.icons8.com/?size=100&id=CwXynvug3tsO&format=png&color=000000" }, { tr: "Reçete", ar: "وصفة طبية", img: "https://img.icons8.com/?size=100&id=ocoXJyj0NwLm&format=png&color=000000" }, { tr: "Hasta", ar: "مريض", img: "https://img.icons8.com/?size=100&id=eU2cuKVwD97I&format=png&color=000000" }, { tr: "Muayene", ar: " فحص طبي", img: "https://img.icons8.com/?size=100&id=zp4c1TOpVmew&format=png&color=000000" }, { tr: "Ambulans", ar: "إسعاف", img: "https://img.icons8.com/?size=100&id=bM0DT_1pYoZh&format=png&color=000000" }]},
+            { id: "shopping_time", title: "التسوق والأسعار", icon: "🛒", words: [{ tr: "Fiyat", ar: "سعر", img: "https://img.icons8.com/?size=100&id=31164&format=png&color=000000" }, { tr: "indirim", ar: "خصم", img: "https://img.icons8.com/?size=100&id=31117&format=png&color=000000" }, { tr: "Pahalı", ar: "غالي", img: "💎" }, { tr: "Ucuz", ar: "رخيص", img: "https://img.icons8.com/?size=100&id=Wtr8jzu0nQXa&format=png&color=000000" }, { tr: "Kasa", ar: "نقطة الدفع", img: "https://img.icons8.com/?size=100&id=GtBonBdOxtDW&format=png&color=000000" }, { tr: "Fiş", ar: "فاتورة", img: "https://img.icons8.com/?size=100&id=53815&format=png&color=000000" }, { tr: "Poşet", ar: "كيس", img: "🛍️" }, { tr: "Müşteri", ar: "زبون", img: "https://img.icons8.com/?size=100&id=Znrabmsrnfq4&format=png&color=000000" }, { tr: "Satıcı", ar: "بائع", img: "https://img.icons8.com/?size=100&id=H8WATYcsUiwd&format=png&color=000000" }, { tr: "Market", ar: "متجر", img: "https://img.icons8.com/?size=100&id=18901&format=png&color=000000" }]},
+            { id: "sea_side", title: "جانب البحر", icon: "🌊", words: [{ tr: "Dalga", ar: "موجة", img: "🌊" }, { tr: "Sahil", ar: "ساحل", img: "⛱️" }, { tr: "Ada", ar: "جزيرة", img: "🏝️" }, { tr: "Kabuk", ar: "صدفة", img: "🐚" }, { tr: "Yüzmek", ar: "سباحة", img: "🏊" }, { tr: "Dalış", ar: "غوص", img: "🤿" }, { tr: "Gemi", ar: "سفينة", img: "🚢" }, { tr: "Kum", ar: "رمل", img: "https://img.icons8.com/?size=100&id=ZKAK_hw7x9Dv&format=png&color=000000" }, { tr: "Tekne", ar: "قارب", img: "🚤" }, { tr: "Yelkenli", ar: "قارب شراعي", img: "https://img.icons8.com/?size=100&id=vHoIsDnrmzzA&format=png&color=000000" }]},
+            { id: "furniture_home", title: "أثاث المنزل", icon: "https://img.icons8.com/?size=100&id=Y4whzjEgpgTq&format=png&color=000000", words: [{ tr: "Koltuk", ar: "كنبة", img: "🛋️" }, { tr: "Sandalye", ar: "كرسي", img: "🪑" }, { tr: "Dolap", ar: "خزانة", img: "https://img.icons8.com/?size=100&id=VOPoJAdm6Inh&format=png&color=000000" }, { tr: "Raf", ar: "رف", img: "https://img.icons8.com/?size=100&id=g1MyHLgRECzc&format=png&color=000000" }, { tr: "Perde", ar: "ستارة", img: "https://img.icons8.com/?size=100&id=65103&format=png&color=000000" }, { tr: "Sehpa", ar: "طاولة صغيرة", img: "https://img.icons8.com/?size=100&id=I0Y9xUSKtBCJ&format=png&color=000000" }, { tr: "Yastık", ar: "وسادة", img: "https://img.icons8.com/?size=100&id=7PbBXLYp8OTM&format=png&color=000000" }, { tr: "Kitaplık", ar: "مكتبة", img: "https://img.icons8.com/?size=100&id=xl5V93KLwgjE&format=png&color=000000" }, { tr: "Battaniye", ar: "بطانية", img: "https://img.icons8.com/?size=100&id=9fNUk5C6CBmu&format=png&color=000000" }, { tr: "Avize", ar: "ثرية", img: "https://img.icons8.com/?size=100&id=ARba1xiEPdSl&format=png&color=000000" }]},
+            { id: "kitchen_tools", title: "أدوات المطبخ 2", icon: "https://img.icons8.com/?size=100&id=CI06OsUzkajN&format=png&color=000000", words: [{ tr: "Fırın", ar: "فرن", img: "https://img.icons8.com/?size=100&id=AmxF75SlZwqb&format=png&color=000000" }, { tr: "Buzdolabı", ar: "ثلاجة", img: "https://img.icons8.com/?size=100&id=qxBTqReBARnZ&format=png&color=000000" }, { tr: "Tava", ar: "مقلاة", img: "https://img.icons8.com/?size=100&id=kfBYKGpfpcRd&format=png&color=000000" }, { tr: "Süzgeç", ar: "مصفاة", img: "https://img.icons8.com/?size=100&id=HtRQy2zwdFOj&format=png&color=000000" }, { tr: "Kase", ar: "زبدية", img: "https://img.icons8.com/?size=100&id=V2E6eVZ4w6pQ&format=png&color=000000" }, { tr: "Tepsi", ar: "صينية", img: "https://img.icons8.com/?size=100&id=yMluZdpxuNk6&format=png&color=000000" }, { tr: "Blender", ar: "خلاط", img: "https://img.icons8.com/?size=100&id=qwuFMHwrkyYo&format=png&color=000000" }, { tr: "Rende", ar: "مبشرة", img: "https://img.icons8.com/?size=100&id=dr4c4ouN7IaO&format=png&color=000000" }, { tr: "Kavanoz", ar: "مرطبان", img: "https://img.icons8.com/?size=100&id=8aQ3YP8anHjx&format=png&color=000000" }, { tr: "Sürahi", ar: "إبريق", img: "https://img.icons8.com/?size=100&id=0L2b3G6NZ6CZ&format=png&color=000000" }]},
+            { id: "opposites_word", title: "الأضداد", icon: "↔️", words: [{ tr: "Açık", ar: "مفتوح", img: "🔓" }, { tr: "Kapalı", ar: "مغلق", img: "🔒" }, { tr: "Dolu", ar: "ممتلئ", img: "https://img.icons8.com/?size=100&id=cqtRUmJJI4wW&format=png&color=000000" }, { tr: "Boş", ar: "فارغ", img: "https://img.icons8.com/?size=100&id=69253&format=png&color=000000" }, { tr: "Ağır", ar: "ثقيل", img: "https://img.icons8.com/?size=100&id=t9fY7udQRyDl&format=png&color=000000" }, { tr: "Hafif", ar: "خفيف", img: "https://img.icons8.com/?size=100&id=5ldD6nONAdPW&format=png&color=000000" }, { tr: "Hızlı", ar: "سريع", img: "https://img.icons8.com/?size=100&id=30961&format=png&color=000000" }, { tr: "Yavaş", ar: "بطيء", img: "https://img.icons8.com/?size=100&id=30977&format=png&color=000000" }, { tr: "Sert", ar: "قاسي", img: "https://img.icons8.com/?size=100&id=51153&format=png&color=000000" }, { tr: "Yumuşak", ar: "ناعم", img: "https://img.icons8.com/?size=100&id=107175&format=png&color=000000" }]},
+            { id: "materials_base", title: "المواد الخام", icon: "🏗️", words: [{ tr: "Demir", ar: "حديد", img: "https://img.icons8.com/?size=100&id=Asr6aMxJbIna&format=png&color=000000" }, { tr: "Odun", ar: "خشب", img: "https://img.icons8.com/?size=100&id=SZ8wRszWtT1U&format=png&color=000000" }, { tr: "Cam", ar: "زجاج", img: "https://img.icons8.com/?size=100&id=F2dn3rqCEpja&format=png&color=000000" }, { tr: "Plastik", ar: "بلاستيك", img: "https://img.icons8.com/?size=100&id=sMLODvGQWIjE&format=png&color=000000" }, { tr: "Kauçuk", ar: "مطاط", img: "https://img.icons8.com/?size=100&id=jw2HfCauowYl&format=png&color=000000" }, { tr: "Kumaş", ar: "قماش", img: "https://img.icons8.com/?size=100&id=XWscazSsFFoM&format=png&color=000000" }, { tr: "Taş", ar: "حجر", img: "https://img.icons8.com/?size=100&id=kZoowiY3IpYF&format=png&color=000000" }, { tr: "Altın", ar: "ذهب", img: "https://img.icons8.com/?size=100&id=6uVJyq1GzDOe&format=png&color=000000" }, { tr: "Gümüş", ar: "فضة", img: "https://img.icons8.com/?size=100&id=Wtr8jzu0nQXa&format=png&color=000000" }, { tr: "Deri", ar: "جلد", img: "https://img.icons8.com/?size=100&id=EZqg3nTRl4M5&format=png&color=000000" }]},
+            { id: "airport_travel", title: "في المطار", icon: "✈️", words: [{ tr: "Yolcu", ar: "مسافر", img: "https://img.icons8.com/?size=100&id=MrzGWtQ1Pmdk&format=png&color=000000" }, { tr: "Vize", ar: "تأشيرة", img: "https://img.icons8.com/?size=100&id=Oi6gkiUcLMmX&format=png&color=000000" }, { tr: "Kapı", ar: "بوابة", img: "https://img.icons8.com/?size=100&id=37z7RMOKtMZQ&format=png&color=000000" }, { tr: "Pilot", ar: "طيار", img: "👨‍✈️" }, { tr: "Hostes", ar: "مضيفة", img: "👩‍✈️" }, { tr: "Bagaj", ar: "حقيبة سفر", img: "🧳" }, { tr: "iniş", ar: "هبوط", img: "🛬" }, { tr: "Kalkış", ar: "إقلاع", img: "🛫" }, { tr: "Koltuk", ar: "مقعد", img: "💺" }, { tr: "Uçak", ar: "طائرة", img: "✈️" }]},
+            { id: "restaurant_order", title: "في المطعم", icon: "https://img.icons8.com/?size=100&id=2BeIdZyy0fFG&format=png&color=000000", words: [{ tr: "Menü", ar: "قائمة الطعام", img: "https://img.icons8.com/?size=100&id=TuZWmysXIs4c&format=png&color=000000" }, { tr: "Sipariş", ar: "طلب", img: "https://img.icons8.com/?size=100&id=384tMrM9MWRX&format=png&color=000000" }, { tr: "Hesap", ar: "حساب", img: "https://img.icons8.com/?size=100&id=kuUrTPzdqSID&format=png&color=000000" }, { tr: "Garson", ar: "نادل", img: "🤵" }, { tr: "Rezervasyon", ar: "حجز", img: "https://img.icons8.com/?size=100&id=zTBqpXCZL5FZ&format=png&color=000000" }, { tr: "Ana yemek", ar: "وجبة رئيسية", img: "https://img.icons8.com/?size=100&id=38082&format=png&color=000000" }, { tr: "Mezeler", ar: "مقبلات", img: "https://img.icons8.com/?size=100&id=37649&format=png&color=000000" }, { tr: "Tatlı", ar: "حلوى", img: "https://img.icons8.com/?size=100&id=CePmHSehYRSN&format=png&color=000000" }, { tr: "içecekler", ar: "مشروبات", img: "https://img.icons8.com/?size=100&id=34670&format=png&color=000000" }, { tr: "Bahşiş", ar: "إكرامية", img: "https://img.icons8.com/?size=100&id=k7LsOQu8wVE4&format=png&color=000000" }]},
+            { id: "nature_second", title: "الطبيعة 2", icon: "🌋", words: [{ tr: "Orman", ar: "غابة", img: "https://img.icons8.com/?size=100&id=5FWNILzuBe9p&format=png&color=000000" }, { tr: "Şelale", ar: "شلال", img: "https://img.icons8.com/?size=100&id=TtLhFutHlpps&format=png&color=000000" }, { tr: "Göl", ar: "بحيرة", img: "https://img.icons8.com/?size=100&id=HxTRgPK5Gbfm&format=png&color=000000" }, { tr: "Mağara", ar: "كهف", img: "https://img.icons8.com/?size=100&id=dTPD1nwmijAJ&format=png&color=000000" }, { tr: "Çöl", ar: "صحراء", img: "https://img.icons8.com/?size=100&id=FKy8zSBhGBgp&format=png&color=000000" }, { tr: "Vadi", ar: "وادي", img: "https://img.icons8.com/?size=100&id=zsUVhFsIIjAz&format=png&color=000000" }, { tr: "Yanardağ", ar: "بركان", img: "https://img.icons8.com/?size=100&id=1djishv99vMy&format=png&color=000000" }, { tr: "Deprem", ar: "زلزال", img: "https://img.icons8.com/?size=100&id=yOnEmEd48HGm&format=png&color=000000" }, { tr: "Sel", ar: "فيضان", img: "https://img.icons8.com/?size=100&id=ZbyF2RdgyiNY&format=png&color=000000" }, { tr: "Okyanus", ar: "محيط", img: "https://img.icons8.com/?size=100&id=8S9pBp5z3rgt&format=png&color=000000" }]},
+            { id: "world_countries", title: "الدول والعالم", icon: "🌍", words: [{ tr: "Türkiye", ar: "تركيا", img: "🇹🇷" }, { tr: "Mısır", ar: "مصر", img: "🇪🇬" }, { tr: "Suudi Arabistan", ar: "السعودية", img: "🇸🇦" }, { tr: "Suriye", ar: "سوريا", img: "https://cdn-icons-png.flaticon.com/128/7941/7941803.png" }, { tr: "ürdün", ar: "الأردن", img: "🇯🇴" }, { tr: "Irak", ar: "العراق", img: "🇮🇶" }, { tr: "Filistin", ar: "فلسطين", img: "🇵🇸" }, { tr: "Almanya", ar: "ألمانيا", img: "🇩🇪" }, { tr: "Fransa", ar: "فرنسا", img: "🇫🇷" }, { tr: "Kuveyt", ar: "الكويت", img: "🇰🇼" }]},
+            { id: "wild_animals_zoo", title: "حيوانات برية", icon: "🐅", words: [{ tr: "Kurt", ar: "ذئب", img: "🐺" }, { tr: "Ayı", ar: "دب", img: "🐻" }, { tr: "Kaplan", ar: "نمر", img: "🐅" }, { tr: "Zürafa", ar: "زرافة", img: "🦒" }, { tr: "Yılan", ar: "ثعبان", img: "🐍" }, { tr: "Tilki", ar: "ثعلب", img: "🦊" }, { tr: "Geyik", ar: "غزال", img: "🦌" }, { tr: "Timsah", ar: "تمساح", img: "🐊" }, { tr: "Fil", ar: "فيل", img: "🐘" }, { tr: "Maymun", ar: "قرد", img: "🐒" }]},
+            { id: "body_parts_two", title: "جسم الإنسان 2", icon: "https://img.icons8.com/?size=100&id=rHkAvDvC8YQQ&format=png&color=000000", words: [{ tr: "Diz", ar: "ركبة", img: "https://img.icons8.com/?size=100&id=Y7V9YSXVA5rv&format=png&color=000000" }, { tr: "Dirsek", ar: "مرفق", img: "https://img.icons8.com/?size=100&id=fROCnyS7dEYS&format=png&color=000000" }, { tr: "Omuz", ar: "كتف", img: "https://img.icons8.com/?size=100&id=v9hQIQ8LW1Wz&format=png&color=000000" }, { tr: "Boyun", ar: "رقبة", img: "https://img.icons8.com/?size=100&id=2Uiq4j9qzHVS&format=png&color=000000" }, { tr: "Sırt", ar: "ظهر", img: "https://img.icons8.com/?size=100&id=hXnRpJ2gyvCK&format=png&color=000000" }, { tr: "Yüz", ar: "وجه", img: "https://img.icons8.com/?size=100&id=UU7z8QaghytE&format=png&color=000000" }, { tr: "Diş", ar: "سن", img: "🦷" }, { tr: "Dil", ar: "لسان", img: "👅" }, { tr: "Kaş", ar: "حاجب", img: "https://img.icons8.com/?size=100&id=1940N9jmaOo5&format=png&color=000000" }, { tr: "Kirpik", ar: "رمش", img: "https://img.icons8.com/?size=100&id=0Doyaneu7Paz&format=png&color=000000" }]},
+            { id: "abstract_concepts", title: "مفاهيم عقلية", icon: "https://img.icons8.com/?size=100&id=104078&format=png&color=000000", words: [{ tr: "Fikir", ar: "فكرة", img: "💡" }, { tr: "Hayal", ar: "خيال", img: "💭" }, { tr: "Bilgi", ar: "معلومة", img: "ℹ️" }, { tr: "Gerçek", ar: "حقيقة", img: "✔️" }, { tr: "Yalan", ar: "كذب", img: "❌" }, { tr: "Sevgi", ar: "حب", img: "💖" }, { tr: "Saygı", ar: "احترام", img: "🤝" }, { tr: "Güven", ar: "ثقة", img: "🛡️" }, { tr: "Başarı", ar: "نجاح", img: "🏆" }, { tr: "Huzur", ar: "هدوء/سلام", img: "🕊️" }]},
+            { id: "emergency_help", title: "الطوارئ", icon: "🚨", words: [{ tr: "imdat", ar: "النجدة", img: "🆘" }, { tr: "Yardım", ar: "مساعدة", img: "https://img.icons8.com/?size=100&id=Rn8iphD383Zu&format=png&color=000000" }, { tr: "Tehlike", ar: "خطر", img: "⚠️" }, { tr: "Yangın", ar: "حريق", img: "🔥" }, { tr: "Kaza", ar: "حادث", img: "https://img.icons8.com/?size=100&id=4r9lkQjMeDp0&format=png&color=000000" }, { tr: "itfaiye", ar: "الإطفاء", img: "https://img.icons8.com/?size=100&id=DGjYwjiGe4Nk&format=png&color=000000" }, { tr: "Kayıp", ar: "ضائع", img: "🔍" }, { tr: "Dikkat", ar: "انتباه", img: "❗" }, { tr: "Dur", ar: "قف", img: "https://img.icons8.com/?size=100&id=WD8YTtf61HTa&format=png&color=000000" }, { tr: "Polis", ar: "الشرطة", img: "https://img.icons8.com/?size=100&id=ukQdEZnYPhAF&format=png&color=000000" }]},
+            { id: "directions_map", title: "الاتجاهات", icon: "🧭", words: [{ tr: "Sağ", ar: "يمين", img: "https://img.icons8.com/?size=100&id=CMWts1cpsnVn&format=png&color=000000" }, { tr: "Sol", ar: "يسار", img: "https://img.icons8.com/?size=100&id=gkW5yexEuzan&format=png&color=000000" }, { tr: "ön", ar: "أمام", img: "https://img.icons8.com/?size=100&id=ijEOz9F5NVdY&format=png&color=000000" }, { tr: "Arka", ar: "خلف", img: "https://img.icons8.com/?size=100&id=7tuqmFP5H9nT&format=png&color=000000" }, { tr: "üst", ar: "فوق", img: "https://img.icons8.com/?size=100&id=zl9MbXJoobYc&format=png&color=000000" }, { tr: "Alt", ar: "تحت", img: "https://img.icons8.com/?size=100&id=dE0rA5BumrFk&format=png&color=000000" }, { tr: "Kuzey", ar: "شمال", img: "https://img.icons8.com/?size=100&id=2u7sA_cU4JNF&format=png&color=000000" }, { tr: "Güney", ar: "جنوب", img: "https://img.icons8.com/?size=100&id=b68kqShAUNgD&format=png&color=000000" }, { tr: "Doğu", ar: "شرق", img: "https://img.icons8.com/?size=100&id=tVKbGh0JIDf9&format=png&color=000000" }, { tr: "Batı", ar: "غرب", img: "https://img.icons8.com/?size=100&id=l51u8TYPPCbP&format=png&color=000000" }]}
+        ];
+        
+    data.forEach(category => {
+    if (category.icon.startsWith('http')) {
+        category.icon = `<img src="${category.icon}" style="width:1.4em; height:1.4em; vertical-align:middle; object-fit:contain;">`;
+    }
+    category.words.forEach(word => {
+        if (word.img.startsWith('http')) {
+            word.img = `<img src="${word.img}" style="width:1.4em; height:1.4em; vertical-align:middle; object-fit:contain;">`;
+      }
+    });
+});
+‎        let currentScore = parseInt(localStorage.getItem('paradise_score') || '0');‎
+‎        const mainContent = document.getElementById('main-content');‎
+‎        const scoreDisplay = document.getElementById('score-display');‎
+
+‎        function getDeviceKey() {‎
+‎            let key = localStorage.getItem('device_key');‎
+‎            if (!key) {‎
+‎                key = 'id-' + Math.random().toString(36).substring(2, 10) + ‎Date.now().toString(36);‎
+‎                localStorage.setItem('device_key', key);‎
+‎            }‎
+‎            return key;‎
+‎        }‎
+‎ 
+
+‎        async function verifyAccess() {‎
+‎            const emailInput = document.getElementById('user-‎email').value.trim().toLowerCase();‎
+‎            const deviceKey = getDeviceKey();‎
+‎            const btn = document.getElementById('login-btn');‎
+‎            const msg = document.getElementById('auth-msg');‎
+
+‎           if(!emailInput) {‎
+‎                msg.innerText = "‎لطفاً أدخل البريد الإلكتروني‎";‎
+‎                msg.classList.remove('hidden');‎
+‎                return;‎
+‎            }‎
+
+‎            btn.innerText = "‎جاري التحقق‎...";‎
+‎            btn.disabled = true;‎
+‎            msg.classList.add('hidden');‎
+
+‎            try {‎
+‎                const response = await ‎fetch(`${SCRIPT_URL}?email=${encodeURIComponent(emailInput)}&t=${new ‎Date().getTime()}`);‎
+‎                const result = await response.json();‎
+
+‎                if (result.status === "success") {‎
+‎                    const safeEmail = emailInput.replace( /\./g,"_");‎
+‎                    const fbRes = await fetch (`https://kelime-hazinesi-337e8-default-‎rtdb.firebaseio.com/device_locks/${safeEmail}.json`);‎
+‎                    const storedKey = await fbRes.json();‎
+‎                    if (storedKey && storedKey !== deviceKey){‎
+‎                        msg.innerText = "‎هذا الحساب مفعل على جهاز اخر لا يمكن استخدامه على اكثر من ‏جهاز‎❌";‎
+‎                        msg.classList.remove('hidden');‎
+‎                          btn.innerText = "‎فتح البوابة‎";‎
+‎                          btn.disabled = false;‎
+‎                          return;‎
+‎                    }‎
+
+‎                    if (!storedKey){‎
+‎                        await fetch (`https://kelime-hazinesi-337e8-default-‎rtdb.firebaseio.com/device_locks/${safeEmail}.json`,‎
+‎                        {method: "PUT",‎
+‎                          body: JSON.stringify(deviceKey)‎
+‎                        });‎
+‎                    }‎
+‎                    localStorage.setItem('paradise_access_granted', 'true');‎
+‎                    localStorage.setItem("email", emailInput)‎
+‎                    document.getElementById('auth-overlay').classList.add('hidden');‎
+‎                    document.getElementById('app').classList.remove('hidden');‎
+‎                    showCategories();‎
+‎                    loadProgress();‎
+‎                } else {‎
+‎                    msg.innerText = "‎هذا البريد غير مسجل كطالب‎ VIP.";‎
+‎                    msg.classList.remove('hidden');‎
+‎                }‎
+‎            } catch (error) {‎
+‎                msg.innerText = "‎خطأ في الاتصال. تأكدي من تفعيل الـ‎ Web App.";‎
+‎                msg.classList.remove('hidden');‎
+‎            } finally {‎
+‎                btn.innerText = "‎فتح البوابة‎";‎
+‎                btn.disabled = false;‎
+‎            }‎
+‎        }‎
+
+‎        function updateScore(points) {‎
+‎            currentScore += points;‎
+‎            localStorage.setItem('paradise_score', currentScore);‎
+‎            scoreDisplay.innerText = currentScore;‎
+
+‎            let email = localStorage.getItem("email");‎
+‎    if (email) {‎
+‎        let safeEmail = email.replace(/\./g, "_");‎
+‎        fetch(`https://kelime-hazinesi-337e8-default-‎rtdb.firebaseio.com/progress/${safeEmail}.json`, {‎
+‎            method: "PATCH",‎
+‎            body: JSON.stringify({ score: currentScore })‎
+‎        });‎
+‎    }‎
+‎            if (currentScore > 0 && currentScore % 500 === 0) {‎
+‎                setTimeout(showFinalVictory, 1200);‎
+‎            }‎
+‎        }‎
+
+‎        function speak(text) {‎
+‎            if (!window.speechSynthesis) return;‎
+‎            window.speechSynthesis.cancel();‎
+‎            const utterance = new SpeechSynthesisUtterance(text);‎
+‎            utterance.lang = 'tr-TR'; ‎
+‎            utterance.rate = 0.85;‎
+‎            window.speechSynthesis.speak(utterance);‎
+‎        }‎
+
+‎        function showMessage(type, text) {‎
+‎            const box = document.getElementById('msg-box');‎
+‎            const icon = document.getElementById('msg-icon');‎
+‎            const txt = document.getElementById('msg-text');‎
+‎            box.classList.remove('hidden');‎
+‎            box.className = `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-6 ‎rounded-2xl z-50 text-center card-shadow min-w-[200px] ${type === 'success' ? 'bg-‎green-600' : 'bg-red-600'} text-white`;‎
+‎            icon.innerText = type === 'success' ? "👑" : "❌";‎
+‎            txt.innerText = text;‎
+‎            setTimeout(() => box.classList.add('hidden'), 1500);‎
+‎        }‎
+
+‎        function showCategories() {‎
+‎            scoreDisplay.innerText = currentScore;‎
+‎            updateNav('home');‎
+‎            mainContent.innerHTML = `‎
+‎                <div class="mb-6 mt-4">‎
+‎                    <h2 class="text-xl font-bold mb-1">‎اختر موضوعاً‎</h2>‎
+‎                    <p class="text-gray-400 text-sm">‎ابدأ رحلة التعلم واحصد التيجان (50 موضوع)‏‎</p>‎
+‎                </div>‎
+‎                <div class="grid grid-cols-2 gap-4 pb-12 custom-scrollbar overflow-y-auto ‎max-h-[70vh]">‎
+‎                    ${data.map(cat => `‎
+‎                        <div onclick="startLesson('${cat.id}')" class="category-card rounded-2xl ‎p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-white/5">‎
+‎                            <span class="text-4xl mb-3">${cat.icon}</span>‎
+‎                            <span class="font-bold text-sm">${cat.title}</span>‎
+‎                            <span class="text-[10px] mt-2 text-gray-400">10 ‎كلمات‎</span>‎
+‎                        </div>‎
+‎                    `).join('')}‎
+‎                </div>‎
+‎            `;‎
+‎        }‎
+
+‎        function startLesson(catId) {‎
+‎            const category = data.find(c => c.id === catId);‎
+‎            let wordIndex = 0;‎
+‎            const renderWord = () => {‎
+‎                const word = category.words[wordIndex];‎
+‎                mainContent.innerHTML = `‎
+‎                    <div class="flex items-center gap-2 mb-8">‎
+‎                        <button onclick="showCategories()" class="text-xl">←</button>‎
+‎                        <h2 class="text-lg font-bold">${category.title}</h2>‎
+‎                        <div class="flex-grow bg-white/10 h-1.5 rounded-full overflow-hidden">‎
+‎                            <div class="bg-gold-gradient h-full transition-all duration-500" ‎style="width: ${((wordIndex+1)/10)*100}%"></div>‎
+‎                        </div>‎
+‎                        <span class="text-[10px] opacity-50">${wordIndex+1}/10</span>‎
+‎                    </div>‎
+‎                    <div class="flex flex-col items-center text-center">‎
+‎                        <div class="w-48 h-48 bg-white/5 rounded-3xl flex items-center justify-‎center text-7xl mb-8 card-shadow border border-white/10">‎
+‎                            ${word.img}‎
+‎                        </div>‎
+‎                        <h3 class="text-4xl font-bold tracking-wider mb-2 gold-‎gradient">${word.tr}</h3>‎
+‎                        <p class="text-xl text-gray-300 mb-8">${word.ar}</p>‎
+‎                        <button onclick="speak('${word.tr}')" class="bg-white/10 w-16 h-16 ‎rounded-full flex items-center justify-center mb-12 hover:bg-white/20">‎
+‎                            <span class="text-2xl">🔊</span>‎
+‎                        </button>‎
+‎                        <div class="grid grid-cols-1 gap-4 w-full">‎
+‎                            <button onclick="checkAnswer('${word.tr}')" class="bg-gold-gradient ‎text-[#4a2b4d] font-bold py-4 rounded-xl btn-bounce shadow-lg">‎تخطي / التالي‎</button>‎
+‎                        </div>‎
+‎                    </div>‎
+‎                `;‎
+‎            };‎
+‎            window.checkAnswer = (correct) => {‎
+‎                updateScore(1);‎
+‎                showMessage('success', '‎رائع! +1 تاج‎');‎
+‎                speak(correct);‎
+‎                setTimeout(() => {‎
+‎                    wordIndex++;‎
+‎                    if(wordIndex < 10) renderWord();‎
+‎                    else showCompletion(category.title);‎
+‎                }, 1000);‎
+‎            };‎
+‎            renderWord();‎
+‎        }‎
+
+‎        function showCompletion(title) {‎
+‎            mainContent.innerHTML = `‎
+‎                <div class="flex flex-col items-center justify-center text-center py-12">‎
+‎                    <div class="crown-icon text-9xl mb-6">👑</div>‎
+‎                    <h2 class="text-3xl font-bold mb-4 gold-gradient">‎أحسنت يا بطل‎!</h2>‎
+‎                    <p class="text-gray-300 mb-8 px-6">‎لقد أتممت موضوع‎ (${title}) ‎بنجاح‎.</p>‎
+‎                    <button onclick="showCategories()" class="bg-gold-gradient text-‎‎[#4a2b4d] font-bold px-12 py-4 rounded-xl shadow-lg">‎العودة للرئيسية‎</button>‎
+‎                </div>‎
+‎            `;‎
+‎        }‎
+
+‎        function showFinalVictory() {‎
+‎            mainContent.innerHTML = `‎
+‎                <div class="flex flex-col items-center justify-center text-center py-12 px-6">‎
+‎                    <div class="crown-icon text-9xl mb-6">🏆</div>‎
+‎                    <h2 class="text-3xl font-bold mb-4 gold-gradient">‎إنجاز القاموس الذهبي‎!</h2>‎
+‎                    <p class="text-gray-300 mb-8 leading-relaxed">‎
+‎                        ‎لقد لمست الآن جميع الكلمات الـ 500‏‎! <br>‎
+‎                        ‎تيجانك الآن هي ‏‎<span class="text-white font-‎bold">${currentScore}</span>. <br>‎
+‎                        ‎استمر في حصد التيجان لتثبيت الكلمات في ذاكرتك للأبد والوصول لرتبة "السلطان اللغوي‎".‎
+‎                    </p>‎
+‎                    <button onclick="showCategories()" class="bg-gold-gradient text-‎‎[#4a2b4d] font-bold px-12 py-4 rounded-xl shadow-lg btn-bounce">‎
+‎                        ‎متابعة الرحلة نحو القمة
+‎                    </button>‎
+‎                </div>‎
+‎            `;‎
+‎        }‎
+
+‎        function showProfile() {‎
+‎            updateNav('profile');‎
+‎            mainContent.innerHTML = `‎
+‎                <div class="py-8">‎
+‎                    <div class="flex flex-col items-center mb-10">‎
+‎                        <div class="w-24 h-24 rounded-full bg-gold-gradient flex items-center ‎justify-center text-4xl mb-4 text-[#4a2b4d] font-bold">P</div>‎
+‎                        <h2 class="text-xl font-bold gold-gradient uppercase">Paradis</h2>‎
+‎                        <p class="text-sm text-gray-400 tracking-widest uppercase">Paradise ‎Türk Student</p>‎
+‎                    </div>‎
+‎                    <div class="bg-white/5 rounded-2xl p-6 mb-4 flex justify-between items-‎center border border-white/10">‎
+‎                        <div>‎
+‎                            <p class="text-xs text-gray-400">‎إجمالي التيجان‎</p>‎
+‎                            <p class="text-2xl font-bold gold-gradient">${currentScore} 👑</p>‎
+‎                        </div>‎
+‎                        <div class="text-right">‎
+‎                            <p class="text-xs text-gray-400">‎المستوى‎</p>‎
+‎                            <p class="font-bold">${currentScore > 400 ? '‎أستاذ‎' : currentScore > ‎‎200 ? '‎متقدم‎' : '‎مبتدئ‎'}</p>‎
+‎                        </div>‎
+‎                    </div>‎
+‎                    <div class="grid grid-cols-2 gap-4">‎
+‎                        <div class="bg-white/5 p-4 rounded-xl text-center border border-‎white/5">‎
+‎                            <span class="block text-2xl mb-1">🎯</span>‎
+‎                            <span class="text-[10px] text-gray-400 uppercase">‎المواضيع‎</span>‎
+‎                            <span class="block font-bold">${Math.floor(currentScore/10)} / ‎‎50</span>‎
+‎                        </div>‎
+‎                        <div class="bg-white/5 p-4 rounded-xl text-center border border-‎white/5">‎
+‎                            <span class="block text-2xl mb-1">🏅</span>‎
+‎                            <span class="text-[10px] text-gray-400 uppercase">‎الكلمات‎</span>‎
+‎                            <span class="block font-bold">${currentScore} / 500</span>‎
+‎                        </div>‎
+‎                    </div>‎
+‎                    <button onclick="logout()" class="w-full mt-8 text-red-400 text-sm opacity-‎‎50">‎تسجيل الخروج‎</button>‎
+‎                </div>‎
+‎            `;‎
+‎        }‎
+
+‎        function updateNav(page) {‎
+‎            const home = document.getElementById('nav-home');‎
+‎            const profile = document.getElementById('nav-profile');‎
+‎            if(page === 'home') {‎
+‎                home.className = "flex flex-col items-center gap-1 text-[#c28d75]";‎
+‎                profile.className = "flex flex-col items-center gap-1 opacity-50";‎
+‎            } else {‎
+‎                profile.className = "flex flex-col items-center gap-1 text-[#c28d75]";‎
+‎                home.className = "flex flex-col items-center gap-1 opacity-50";‎
+‎            }‎
+‎        }‎
+
+‎        function logout() {‎
+‎            localStorage.removeItem('paradise_access_granted');‎
+‎            location.reload();‎
+‎        }‎
+
+‎        window.onload = () => {‎
+‎            setTimeout(() => {‎
+‎                document.getElementById('loading-overlay').style.display = 'none';‎
+‎                if (localStorage.getItem('paradise_access_granted') === 'true') {‎
+‎                    document.getElementById('app').classList.remove('hidden');‎
+‎                    showCategories();‎
+‎                    loadProgress();‎
+‎                } else {‎
+‎                    document.getElementById('auth-overlay').classList.remove('hidden');‎
+‎                }‎
+‎            }, 1500);‎
+‎        };‎
+‎      function loadProgress() {‎
+‎  let email = localStorage.getItem("email");‎
+‎  if (!email)return;‎
+‎  let safeEmail = email.replace(/\./g,"_");‎
+
+‎  fetch("https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/progress/" + safeEmail ‎‎+ ".json")‎
+‎    .then(res => res.json())‎
+‎    .then(data => {‎
+‎     currentScore = data?.score || 0;‎
+‎     scoreDisplay.innerText = currentScore;‎
+‎     localStorage.setItem('paradise_score' , currentScore)‎
+‎    });‎
+‎}‎
+       
+    </script>
+</body>
+</html>
