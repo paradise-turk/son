@@ -292,15 +292,17 @@
             const loader = document.getElementById('loading-overlay');
             if (loader) loader.style.display = 'none';
 
-            if (localStorage.getItem('paradise_access_granted') === 'true') {
-                document.getElementById('app').classList.remove('hidden');
-                showCategories();
+         if (localStorage.getItem('paradise_access_granted') === 'true') {
+            document.getElementById('app').classList.remove('hidden');
+            showCategories();
+            
+            // الحل هنا: لا تشغل الدالة إلا إذا كان هناك إيميل مخزن فعلياً
+            if (localStorage.getItem("email")) {
                 loadProgress();
-            } else {
-                document.getElementById('auth-overlay').classList.remove('hidden');
             }
-        }, 1500);
-    };
+        } else {
+            document.getElementById('auth-overlay').classList.remove('hidden');
+        };
 
     // 5. دالة تحديث النقاط وحفظ التقدم
     function updateScore(points) {
