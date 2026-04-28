@@ -236,8 +236,8 @@
                 const response = await fetch(`${SCRIPT_URL}?email=${encodeURIComponent(emailInput)}&t=${new Date().getTime()}`);
                 const result = await response.json();
 if (result.status === "success") {
-    // 1. Check if the user is the Owner (Fardous)
-    if (emailInput.trim().toLowerCase() === "paradise-aaie@gmail.com") {
+    // 1. Check if the user is the Owner (paradise)
+    if (emailInput.trim().toLowerCase() === "paradise.aaie@gmail.com") {
         localStorage.setItem('paradise_access_granted', 'true');
         localStorage.setItem('email', emailInput.trim().toLowerCase());
         showCategories(); // This opens the site immediately without reloading
