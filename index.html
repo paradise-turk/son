@@ -246,11 +246,10 @@ async function handleLogin() {
     btn.disabled = true;
     msg.classList.add('hidden');
 
-    // Define the special exception email
     const specialEmail = "paradise.aaie@gmail.com";
 
     try {
-        // CASE 1: The special exception email (No Google Sheets check, No Firebase check)
+        // CASE 1: The special exception email
         if (emailInput === specialEmail) {
             localStorage.setItem('paradise_access_granted', 'true');
             localStorage.setItem("email", emailInput);
@@ -258,18 +257,19 @@ async function handleLogin() {
             document.getElementById('app').classList.remove('hidden');
             if (typeof showCategories === "function") showCategories();
             if (typeof loadProgress === "function") loadProgress();
-            return; // Exit function early
+            return; 
         }
 
-        // CASE 2: Regular emails (Perform all checks)
-        // Ensure SCRIPT_URL is defined in your main script
+        // CASE 2: Regular emails
+        if (typeof SCRIPT_URL === 'undefined') {
+            throw new Error("SCRIPT_URL is not defined");
+        }
+
         const response = await fetch(`${SCRIPT_URL}?email=${encodeURIComponent(emailInput)}&t=${new Date().getTime()}`);
         const result = await response.json();
 
         if (result.status === "success") {
             const safeEmail = emailInput.replace(/\./g, "_");
-            
-            // Check Firebase for device lock
             const fbRes = await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`);
             const storedKey = await fbRes.json();
             const currentKey = typeof deviceKey !== 'undefined' ? deviceKey : 'unknown';
@@ -277,10 +277,11 @@ async function handleLogin() {
             if (storedKey && storedKey !== currentKey) {
                 msg.innerText = "هذا الحساب مفعل على جهاز اخر لا يمكن استخدامه على اكثر من جهاز❌";
                 msg.classList.remove('hidden');
+                btn.innerText = "فتح البوابة";
+                btn.disabled = false;
                 return;
             }
 
-            // Register device if not already registered
             if (!storedKey) {
                 await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`, {
                     method: "PUT",
@@ -288,7 +289,6 @@ async function handleLogin() {
                 });
             }
 
-            // Grant access
             localStorage.setItem('paradise_access_granted', 'true');
             localStorage.setItem("email", emailInput);
             document.getElementById('auth-overlay').classList.add('hidden');
@@ -301,7 +301,7 @@ async function handleLogin() {
             msg.classList.remove('hidden');
         }
     } catch (error) {
-        console.error(error);
+        console.error("Login Error:", error);
         msg.innerText = "خطأ في الاتصال. تأكدي من تفعيل الـ Web App.";
         msg.classList.remove('hidden');
     } finally {
@@ -309,27 +309,7 @@ async function handleLogin() {
         btn.disabled = false;
     }
 }
-
-            // Access granted
-            localStorage.setItem('paradise_access_granted', 'true');
-            localStorage.setItem("email", emailInput);
-            document.getElementById('auth-overlay').classList.add('hidden');
-            document.getElementById('app').classList.remove('hidden');
-            showCategories();
-            loadProgress();
-} else {
-            msg.innerText = "هذا البريد غير مسجل كطالب VIP.";
-            msg.classList.remove('hidden');
-        }
-    } catch (error) {
-        console.error(error);
-        msg.innerText = "خطأ في الاتصال. تأكدي من تفعيل الـ Web App.";
-        msg.classList.remove('hidden');
-    } finally {
-        btn.innerText = "فتح البوابة";
-        btn.disabled = false;
-    }
-}
+            
         function updateScore(points) {
             currentScore += points;
             localStorage.setItem('paradise_score', currentScore);
