@@ -235,16 +235,17 @@
             try {
                 const response = await fetch(`${SCRIPT_URL}?email=${encodeURIComponent(emailInput)}&t=${new Date().getTime()}`);
                 const result = await response.json();
-
-               if (result.status === "success") {
-    if (emailInput === "fardous_abouhamda@gmail.com") { 
+if (result.status === "success") {
+    // 1. Check if the user is the Owner (Fardous)
+    if (emailInput.trim().toLowerCase() === "paradise-aaie@gmail.com") {
         localStorage.setItem('paradise_access_granted', 'true');
-        localStorage.setItem('email', emailInput);
-        location.reload(); 
+        localStorage.setItem('email', emailInput.trim().toLowerCase());
+        showCategories(); // This opens the site immediately without reloading
         return; 
     }
 
-    const safeEmail = emailInput.replace(/\./g, "_");
+    // 2. Security for other students (Device Lock)
+    const safeEmail = emailInput.trim().toLowerCase().replace(/\./g, "_");
     const fbRes = await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`);
     const storedKey = await fbRes.json();
     
@@ -255,7 +256,6 @@
         btn.disabled = false;
         return;
     }
-
                     if (!storedKey){
                         await fetch (`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`,
                         {method: "PUT",
