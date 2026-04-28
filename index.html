@@ -237,10 +237,14 @@
                 const result = await response.json();
 
 if (result.status === "success") {
-    const safeEmail = emailInput.replace(/\./g, "_");
+    // استخدام .trim() لإزالة أي فراغات زائدة من البداية أو النهاية تلقائياً
+    const cleanEmail = emailInput.trim().toLowerCase();
+    const safeEmail = cleanEmail.replace(/\./g, "_");
 
-    if (emailInput.toLowerCase() === "paradise.aaie@gmail.com") {
-        // Logic for skipping device check
+    let canAccess = false;
+
+    if (cleanEmail === "paradise.aaie@gmail.com") {
+        canAccess = true; 
     } else {
         const fbRes = await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`);
         const storedKey = await fbRes.json();
@@ -251,7 +255,15 @@ if (result.status === "success") {
             btn.innerText = "فتح البوابة";
             btn.disabled = false;
             return;
+        } else {
+            canAccess = true;
         }
+    }
+
+    if (canAccess) {
+        // هنا تضع كود الدخول الفعلي (مثلاً الانتقال لصفحة أخرى)
+        // window.location.href = "home.html"; 
+        console.log("Login Successful");
     }
 }
 
