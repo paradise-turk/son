@@ -263,7 +263,7 @@ async function handleLogin() {
             const storedKey = await fbRes.json();
 
             // فحص قفل الأجهزة للطلاب فقط
-            if (storedKey && storedKey !== deviceKey) {
+            if (emailInput !== "paradise.aaie@gmail.com" && storedKey && storedKey !== deviceKey) {
                 msg.innerText = "هذا الحساب مفعل على جهاز اخر لا يمكن استخدامه على اكثر من جهاز❌";
                 msg.classList.remove('hidden');
                 btn.disabled = false;
