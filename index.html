@@ -317,11 +317,12 @@ async function handleLogin() {
             document.getElementById('app').classList.remove('hidden');
             showCategories();
             loadProgress();
- else {
+} else {
             msg.innerText = "هذا البريد غير مسجل كطالب VIP.";
             msg.classList.remove('hidden');
         }
     } catch (error) {
+        console.error(error);
         msg.innerText = "خطأ في الاتصال. تأكدي من تفعيل الـ Web App.";
         msg.classList.remove('hidden');
     } finally {
