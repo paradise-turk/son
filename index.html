@@ -268,19 +268,29 @@ async function handleLogin() {
         const response = await fetch(`${SCRIPT_URL}?email=${encodeURIComponent(emailInput)}&t=${new Date().getTime()}`);
         const result = await response.json();
 
-        if (result.status === "success") {
-            const safeEmail = emailInput.replace(/\./g, "_");
-            const fbRes = await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`);
-            const storedKey = await fbRes.json();
-            const currentKey = typeof deviceKey !== 'undefined' ? deviceKey : 'unknown';
+       if (result.status === "success") {
+    // 1. إضافة استثناء المالك هنا
+    const adminEmail = "fardous.abouhamda@gmail.com"; // ضعي إيميلك هنا بدقة
+    if (emailInput === adminEmail) {
+        console.log("تم التعرف على المالك: تم تخطي قفل الأجهزة بنجاح.");
+        // هنا الكود يكمل مباشرة لفتح الموقع دون الدخول في دوامة قفل الأجهزة
+        proceedToSite(); // أو الكود الذي يفتح الموقع عندك
+        return; 
+    }
 
-            if (storedKey && storedKey !== currentKey) {
-                msg.innerText = "هذا الحساب مفعل على جهاز اخر لا يمكن استخدامه على اكثر من جهاز❌";
-                msg.classList.remove('hidden');
-                btn.innerText = "فتح البوابة";
-                btn.disabled = false;
-                return;
-            }
+    // 2. باقي الكود الأصلي للطلاب (لا يتغير)
+    const safeEmail = emailInput.replace(/\./g, "_");
+    const fbRes = await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`);
+    const storedKey = await fbRes.json();
+    const currentKey = typeof deviceKey !== 'undefined' ? deviceKey : 'unknown';
+
+    if (storedKey && storedKey !== currentKey) {
+        msg.innerText = "هذا الحساب مفعل على جهاز اخر لا يمكن استخدامه على اكثر من جهاز❌";
+        msg.classList.remove('hidden');
+        btn.innerText = "فتح البوابة";
+        btn.disabled = false;
+        return;
+    }
 
             if (!storedKey) {
                 await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`, {
