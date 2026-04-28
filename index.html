@@ -235,17 +235,13 @@
             try {
                 const response = await fetch(`${SCRIPT_URL}?email=${encodeURIComponent(emailInput)}&t=${new Date().getTime()}`);
                 const result = await response.json();
-
 if (result.status === "success") {
-    // استخدام .trim() لإزالة أي فراغات زائدة من البداية أو النهاية تلقائياً
+    // 1. تنظيف الإيميل من الفراغات وتحويله لحروف صغيرة
     const cleanEmail = emailInput.trim().toLowerCase();
     const safeEmail = cleanEmail.replace(/\./g, "_");
 
-    let canAccess = false;
-
-    if (cleanEmail === "paradise.aaie@gmail.com") {
-        canAccess = true; 
-    } else {
+    // 2. فحص الجهاز: يتم فقط إذا لم يكن الإيميل هو إيميلك الخاص
+    if (cleanEmail !== "paradise.aaie@gmail.com") {
         const fbRes = await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`);
         const storedKey = await fbRes.json();
 
@@ -254,17 +250,12 @@ if (result.status === "success") {
             msg.classList.remove('hidden');
             btn.innerText = "فتح البوابة";
             btn.disabled = false;
-            return;
-        } else {
-            canAccess = true;
+            return; // يتوقف هنا فقط إذا كان الجهاز خطأ
         }
     }
 
-    if (canAccess) {
-        // هنا تضع كود الدخول الفعلي (مثلاً الانتقال لصفحة أخرى)
-        // window.location.href = "home.html"; 
-        console.log("Login Successful");
-    }
+    // 3. إذا وصل الكود إلى هنا (سواء كان إيميلك أو الجهاز صحيح) سيكمل الدخول تلقائياً
+    // لا تغير أي شيء تحت هذا السطر، اترك الكود الأصلي يكمل عمله هنا
 }
 
     if (!storedKey){
