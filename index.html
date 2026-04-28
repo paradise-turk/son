@@ -236,52 +236,22 @@
                 const response = await fetch(`${SCRIPT_URL}?email=${encodeURIComponent(emailInput)}&t=${new Date().getTime()}`);
                 const result = await response.json();
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt8Bx9uNuL0aplfRfUma4a2-FFzZOX9a7J3kDBZdsSSK1vF3S51FRS9bCXFmTJkwM5/exec";
+if (result.status === "success") {
+    const safeEmail = emailInput.replace(/\./g, "_");
 
-async function handleLogin() {
-    const emailInput = document.getElementById("email").value.trim();
-    const adminEmail = "paradise.aaie@gmail.com";
-    const msg = document.getElementById("message"); // تأكدي من اسم الـ ID للمسجات
-    const btn = document.getElementById("loginBtn"); // تأكدي من اسم الـ ID للزر
+    if (emailInput.toLowerCase() === "paradise.aaie@gmail.com") {
+        // Logic for skipping device check
+    } else {
+        const fbRes = await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`);
+        const storedKey = await fbRes.json();
 
-    // 1. استثناء المالك: الدخول المباشر قبل أي اتصال خارجي
-    if (emailInput === adminEmail) {
-        localStorage.setItem("userEmail", emailInput);
-        // هنا الكود سيكمل تلقائياً لفتح المحتوى للمالك
-        enterSite(); 
-        return;
-    }
-
-    try {
-        // 2. طلب التحقق من Google Sheets للطلاب
-        const response = await fetch(`${SCRIPT_URL}?email=${emailInput}`);
-        const result = await response.json();
-
-        if (result.status === "success") {
-            const safeEmail = emailInput.replace(/\./g, "_");
-            const fbRes = await fetch(`https://kelime-hazinesi-337e8-default-rtdb.firebaseio.com/device_locks/${safeEmail}.json`);
-            const storedKey = await fbRes.json();
-
-            // فحص قفل الأجهزة للطلاب فقط
-            if (emailInput !== "paradise.aaie@gmail.com" && storedKey && storedKey !== deviceKey) {
-                msg.innerText = "هذا الحساب مفعل على جهاز اخر لا يمكن استخدامه على اكثر من جهاز❌";
-                msg.classList.remove('hidden');
-                btn.disabled = false;
-                return;
-            }
-
-            localStorage.setItem("userEmail", emailInput);
-            enterSite();
-        } else {
-            msg.innerText = "الإيميل غير مسجل أو منتهي الصلاحية";
+        if (storedKey && storedKey !== deviceKey) {
+            msg.innerText = "هذا الحساب مفعل على جهاز اخر لا يمكن استخدامه على اكثر من جهاز❌";
             msg.classList.remove('hidden');
+            btn.innerText = "فتح البوابة";
             btn.disabled = false;
+            return;
         }
-    } catch (error) {
-        console.error("Error:", error);
-        msg.innerText = "خطأ في الاتصال. تأكدي من تفعيل الـ Web App.";
-        msg.classList.remove('hidden');
-        btn.disabled = false;
     }
 }
 
